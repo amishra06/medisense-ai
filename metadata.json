@@ -1,0 +1,8 @@
+{
+  "name": "MediSense AI - Multimodal Medical Diagnosis Assistant",
+  "description": "A sophisticated tool that analyzes medical images, documents, and voice descriptions using Gemini 3's reasoning capabilities to provide preliminary health assessments.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
