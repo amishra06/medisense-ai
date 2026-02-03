@@ -6,12 +6,12 @@ import { UserReport } from '../types';
 
 // Use environment variables if available (e.g. via build tools) or the provided hardcoded credentials
 const firebaseConfig = {
-  apiKey: "AIzaSyDUccUDumhUl7aoEKcp-C2qPgDlO-fBcbY",
-  authDomain: "medical-apps-53d85.firebaseapp.com",
-  projectId: "medical-apps-53d85",
-  storageBucket: "medical-apps-53d85.firebasestorage.app",
-  messagingSenderId: "388455185420",
-  appId: "1:388455185420:web:a463bee51b6ce13dec0229"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 // Initialize Firebase as a singleton. 

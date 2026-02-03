@@ -130,11 +130,8 @@ Visit `http://localhost:5173` and start diagnosing! 🎉
 ### Clinical Report
 ![Report](./screenshots/report.png)
 
-### Voice Recording
-![Voice Input](./screenshots/voice.png)
 
 ---
-
 ## 📖 Usage Guide
 
 ### Creating a New Diagnosis
@@ -283,9 +280,8 @@ In case of emergency, call 911 or visit your nearest emergency department immedi
 
 ## 📧 Contact
 
-- **Project Link**: [https://github.com/yourusername/medisense-ai](https://github.com/yourusername/medisense-ai)
-- **Devpost**: [https://devpost.com/software/medisense-ai](https://devpost.com/software/medisense-ai)
-- **Email**: your.email@example.com
+- **Project Link**: [https://github.com/amishra06/medisense-ai](https://github.com/amishra06/medisense-ai)
+- **Email**: [amishra6173@gmail.com]
 
 ---
 
