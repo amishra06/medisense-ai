@@ -117,26 +117,26 @@ const ResultDisplay: React.FC<ResultDisplayProps & { embedded?: boolean }> = ({ 
                         <strong className="font-semibold text-gray-700" {...props} />
                      ),
 
-                     // Tables - DARK HEADERS WITH WHITE TEXT
+                     // Tables - HIGH CONTRAST HEADERS
                      table: ({ node, ...props }) => (
-                        <div className="my-4 overflow-hidden border border-gray-300 rounded-lg shadow-sm">
-                           <table className="w-full" {...props} />
+                        <div className="my-6 overflow-hidden border border-slate-300 rounded-xl shadow-lg">
+                           <table className="w-full border-collapse" {...props} />
                         </div>
                      ),
                      thead: ({ node, ...props }) => (
-                        <thead className="bg-slate-800" {...props} />
+                        <thead className="bg-transparent" {...props} />
                      ),
                      th: ({ node, ...props }) => (
-                        <th className="px-4 py-3 text-left font-semibold text-white border-b-2 border-slate-700" {...props} />
+                        <th className="px-5 py-4 text-left text-sm font-black text-slate-900 uppercase tracking-wider border-b-2 border-slate-200" {...props} />
                      ),
                      tbody: ({ node, ...props }) => (
-                        <tbody {...props} />
+                        <tbody className="bg-white" {...props} />
                      ),
                      tr: ({ node, ...props }) => (
-                        <tr className="border-b border-gray-200 last:border-0" {...props} />
+                        <tr className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors" {...props} />
                      ),
                      td: ({ node, ...props }) => (
-                        <td className="px-4 py-3 text-gray-700" {...props} />
+                        <td className="px-5 py-4 text-sm font-medium text-slate-700" {...props} />
                      ),
 
                      // Blockquotes (for interpretation sections)
@@ -225,8 +225,10 @@ const ResultDisplay: React.FC<ResultDisplayProps & { embedded?: boolean }> = ({ 
             </section>
          )}
 
-         <div className="max-w-2xl mx-auto mt-12 p-6 bg-slate-100/50 dark:bg-gray-800/50 rounded-2xl text-center">
-            <p className="text-[10px] font-medium italic text-slate-500 dark:text-gray-400 leading-relaxed">
+         {/* Safety Disclaimer Card */}
+         <div className="max-w-3xl mx-auto mt-16 p-8 bg-slate-100 dark:bg-gray-800 rounded-[2rem] border border-slate-200 dark:border-gray-700 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-slate-300 dark:bg-slate-600" />
+            <p className="text-xs font-bold text-slate-600 dark:text-slate-300 leading-relaxed text-center italic px-4">
                &ldquo;{assessment.disclaimer}&rdquo;
             </p>
          </div>
