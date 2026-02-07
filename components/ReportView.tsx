@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../services/firebaseService';
+import { db, deleteReport } from '../services/firebaseService';
 import { useAuth } from '../App';
 import { UserReport } from '../types';
 import ResultDisplay from './ResultDisplay';
@@ -24,6 +24,19 @@ const ReportView: React.FC = () => {
       setDownloading(true);
       await generatePDF('report-view-container', `MediSense-Report-${report.patientData.name || 'Anonymous'}.pdf`);
       setDownloading(false);
+   };
+
+   const handleDelete = async () => {
+      if (!report || !user) return;
+      if (confirm("Are you sure you want to delete this report? This action cannot be undone.")) {
+         try {
+            await deleteReport(user.uid, report.id);
+            navigate('/dashboard/reports');
+         } catch (error) {
+            console.error("Failed to delete report:", error);
+            alert("Failed to delete report. Please try again.");
+         }
+      }
    };
 
    useEffect(() => {
@@ -57,7 +70,11 @@ const ReportView: React.FC = () => {
                <button onClick={() => setShowShareModal(true)} className="px-6 py-3 bg-white border border-slate-200 rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition shadow-sm">
                   <Share2 className="w-4 h-4 text-cyan-500" /> Share Record
                </button>
-               <button className="p-3 bg-rose-50 border border-rose-100 text-rose-500 rounded-2xl hover:bg-rose-100 transition">
+               <button
+                  onClick={handleDelete}
+                  className="p-3 bg-rose-50 border border-rose-100 text-rose-500 rounded-2xl hover:bg-rose-100 transition"
+                  title="Delete Report"
+               >
                   <Trash2 className="w-4 h-4" />
                </button>
             </div>

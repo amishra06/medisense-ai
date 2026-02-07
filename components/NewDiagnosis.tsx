@@ -15,7 +15,7 @@ const NewDiagnosis: React.FC = () => {
   const [patientData, setPatientData] = useState<PatientData>({
     name: '', age: '', gender: '', symptoms: '', duration: '', history: '',
   });
-  
+
   const [mediaList, setMediaList] = useState<DiagnosticMedia[]>([]);
   const [audioFile, setAudioFile] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -23,10 +23,10 @@ const NewDiagnosis: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
-  
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -35,25 +35,49 @@ const NewDiagnosis: React.FC = () => {
   const audioChunksRef = useRef<Blob[]>([]);
 
   const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
     setIsCameraActive(false);
     setIsCameraReady(false);
   };
 
-  const startCamera = async () => {
-    setError(null);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
-      setIsCameraActive(true);
-    } catch (err) {
-      setError("Camera access denied.");
-    }
+  const startCamera = () => {
+    setIsCameraActive(true);
   };
+
+  React.useEffect(() => {
+    let stream: MediaStream | null = null;
+
+    const initCamera = async () => {
+      if (isCameraActive) {
+        setError(null);
+        try {
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+          } catch (err) {
+            console.warn("Rear camera not found, trying default camera...", err);
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          }
+
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+          streamRef.current = stream;
+        } catch (err) {
+          console.error("Camera access error:", err);
+          setError("Camera access denied. Please check permissions.");
+          setIsCameraActive(false);
+        }
+      }
+    };
+
+    initCamera();
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      streamRef.current = null;
+    };
+  }, [isCameraActive]);
 
   const capturePhoto = () => {
     if (videoRef.current && canvasRef.current && isCameraReady) {
@@ -68,26 +92,56 @@ const NewDiagnosis: React.FC = () => {
     }
   };
 
+  const getSupportedMimeType = () => {
+    const types = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/mp4',
+      'audio/ogg;codecs=opus',
+      'audio/aac'
+    ];
+    for (const type of types) {
+      if (MediaRecorder.isTypeSupported(type)) return type;
+    }
+    return ''; // let browser choose default
+  };
+
   const startRecording = async () => {
     setError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      const mimeType = getSupportedMimeType();
+      const options = mimeType ? { mimeType } : undefined;
+
+      const recorder = new MediaRecorder(stream, options);
       mediaRecorderRef.current = recorder;
       audioChunksRef.current = [];
+
       recorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
       recorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        setIsRecording(false);
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType || 'audio/webm' });
         const reader = new FileReader();
         reader.onloadend = async () => {
           const url = reader.result as string;
           setAudioFile(url);
           setIsExtracting(true);
+
+          // Check file size (limit to 10MB)
+          if (audioBlob.size > 10 * 1024 * 1024) {
+            setError("Audio recording is too long. Please keep it under 5 minutes.");
+            setIsExtracting(false);
+            return;
+          }
+
           try {
             const extracted = await extractPatientDataFromAudio(url);
             setPatientData(prev => ({ ...prev, ...extracted }));
+            // Clear error if successful
+            setError(null);
           } catch (e) {
             console.error("Voice extraction failed");
+            setError("Could not extract data from audio. Please try again.");
           } finally {
             setIsExtracting(false);
           }
@@ -98,7 +152,8 @@ const NewDiagnosis: React.FC = () => {
       recorder.start();
       setIsRecording(true);
     } catch (err) {
-      setError("Microphone access denied.");
+      console.error("Microphone error:", err);
+      setError("Microphone access denied or not supported.");
     }
   };
 
@@ -134,12 +189,12 @@ const NewDiagnosis: React.FC = () => {
     <div className="animate-in fade-in slide-in-from-top-4 duration-500">
       <div className="flex justify-between items-center mb-8">
         <div>
-           <h1 className="text-3xl font-black text-slate-800 tracking-tight mb-2">New Clinical Analysis</h1>
-           <p className="text-slate-500 font-medium">Cross-analyze diagnostics with multimodal intelligence.</p>
+          <h1 className="text-3xl font-black text-slate-800 tracking-tight mb-2">New Clinical Analysis</h1>
+          <p className="text-slate-500 font-medium">Cross-analyze diagnostics with multimodal intelligence.</p>
         </div>
         <div className="flex items-center gap-3">
-           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Auto-save: Active</span>
-           <div className="w-2 h-2 bg-teal-500 rounded-full animate-pulse" />
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Auto-save: Active</span>
+          <div className="w-2 h-2 bg-teal-500 rounded-full animate-pulse" />
         </div>
       </div>
 
@@ -150,16 +205,16 @@ const NewDiagnosis: React.FC = () => {
         <div className="lg:col-span-4 space-y-6">
           <div className="bg-white p-6 rounded-[2rem] shadow-xl shadow-teal-900/5 border border-slate-100">
             <h3 className="text-xs font-black text-teal-600 uppercase tracking-widest mb-6">Diagnostic Attachments</h3>
-            
+
             {isCameraActive ? (
               <div className="relative aspect-square rounded-3xl overflow-hidden bg-black mb-4">
                 <video ref={videoRef} autoPlay playsInline onPlaying={() => setIsCameraReady(true)} className="w-full h-full object-cover" />
-                <button 
-                  onClick={capturePhoto} 
+                <button
+                  onClick={capturePhoto}
                   disabled={!isCameraReady}
                   className="absolute bottom-6 left-1/2 -translate-x-1/2 w-14 h-14 bg-white rounded-full border-4 border-teal-500 flex items-center justify-center disabled:opacity-50"
                 >
-                   <div className="w-10 h-10 rounded-full border-2 border-slate-100" />
+                  <div className="w-10 h-10 rounded-full border-2 border-slate-100" />
                 </button>
               </div>
             ) : mediaList.length > 0 ? (
@@ -197,61 +252,60 @@ const NewDiagnosis: React.FC = () => {
           </div>
 
           <div className="bg-gradient-to-br from-teal-600 to-cyan-700 p-8 rounded-[2rem] shadow-xl text-white overflow-hidden relative group">
-             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-all duration-700" />
-             <h3 className="text-xs font-black text-teal-100 uppercase tracking-widest mb-6">Voice Intake Assistant</h3>
-             
-             {isRecording ? (
-               <div className="flex flex-col items-center py-4">
-                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-6 animate-pulse">
-                     <div className="w-10 h-10 bg-white rounded-full shadow-lg" />
-                  </div>
-                  <button onClick={() => mediaRecorderRef.current?.stop()} className="px-6 py-2 bg-red-500 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-900/40">Stop Now</button>
-               </div>
-             ) : isExtracting ? (
-               <div className="flex flex-col items-center py-4">
-                  <Loader2 className="w-10 h-10 animate-spin mb-4" />
-                  <p className="text-[10px] font-black uppercase tracking-widest animate-pulse">Intelligent Profiling...</p>
-               </div>
-             ) : (
-               <button onClick={startRecording} className="w-full flex flex-col items-center gap-6 group/btn">
-                  <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-xl group-hover/btn:scale-110 transition duration-300">
-                     <Mic className="w-10 h-10 text-teal-600" />
-                  </div>
-                  <span className="text-sm font-bold opacity-80 group-hover/btn:opacity-100 transition-opacity">Capture Audio Narrative</span>
-               </button>
-             )}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-all duration-700" />
+            <h3 className="text-xs font-black text-teal-100 uppercase tracking-widest mb-6">Voice Intake Assistant</h3>
+
+            {isRecording ? (
+              <div className="flex flex-col items-center py-4">
+                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-6 animate-pulse">
+                  <div className="w-10 h-10 bg-white rounded-full shadow-lg" />
+                </div>
+                <button onClick={() => mediaRecorderRef.current?.stop()} className="px-6 py-2 bg-red-500 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-900/40">Stop Now</button>
+              </div>
+            ) : isExtracting ? (
+              <div className="flex flex-col items-center py-4">
+                <Loader2 className="w-10 h-10 animate-spin mb-4" />
+                <p className="text-[10px] font-black uppercase tracking-widest animate-pulse">Intelligent Profiling...</p>
+              </div>
+            ) : (
+              <button onClick={startRecording} className="w-full flex flex-col items-center gap-6 group/btn">
+                <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-xl group-hover/btn:scale-110 transition duration-300">
+                  <Mic className="w-10 h-10 text-teal-600" />
+                </div>
+                <span className="text-sm font-bold opacity-80 group-hover/btn:opacity-100 transition-opacity">Capture Audio Narrative</span>
+              </button>
+            )}
           </div>
         </div>
 
         {/* Right: Intake Form */}
         <div className="lg:col-span-8">
-           <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-teal-900/5 border border-white">
-              <PatientForm data={patientData} onChange={setPatientData} />
-              
-              <div className="mt-12 pt-8 border-t border-slate-100">
-                 {error && <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-xs font-bold border border-red-100">{error}</div>}
-                 
-                 <button 
-                  onClick={handleAnalyze}
-                  disabled={isAnalyzing || isRecording}
-                  className={`w-full py-6 rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-2xl transition-all relative overflow-hidden group ${
-                    isAnalyzing ? 'bg-slate-200 text-slate-400' : 'bg-teal-600 text-white hover:bg-teal-700 hover:-translate-y-1'
+          <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-teal-900/5 border border-white">
+            <PatientForm data={patientData} onChange={setPatientData} />
+
+            <div className="mt-12 pt-8 border-t border-slate-100">
+              {error && <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-xs font-bold border border-red-100">{error}</div>}
+
+              <button
+                onClick={handleAnalyze}
+                disabled={isAnalyzing || isRecording}
+                className={`w-full py-6 rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-2xl transition-all relative overflow-hidden group ${isAnalyzing ? 'bg-slate-200 text-slate-400' : 'bg-teal-600 text-white hover:bg-teal-700 hover:-translate-y-1'
                   }`}
-                 >
-                   {isAnalyzing || isSaving ? (
-                     <div className="flex items-center justify-center gap-3">
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Clinical reasoning in progress...</span>
-                     </div>
-                   ) : (
-                     <div className="flex items-center justify-center gap-3">
-                        <span>Analyze & Generate Report</span>
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                     </div>
-                   )}
-                 </button>
-              </div>
-           </div>
+              >
+                {isAnalyzing || isSaving ? (
+                  <div className="flex items-center justify-center gap-3">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Clinical reasoning in progress...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-3">
+                    <span>Analyze & Generate Report</span>
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
       <canvas ref={canvasRef} className="hidden" />

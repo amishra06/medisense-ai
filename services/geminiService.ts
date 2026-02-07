@@ -5,6 +5,17 @@ import { PreliminaryAssessment, PatientData, UrgencyLevel, ExtractedPatientInfo,
 const PRO_MODEL = 'gemini-3-pro-preview';
 const FLASH_MODEL = 'gemini-3-flash-preview';
 
+const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, errorMessage: string): Promise<T> => {
+  let timeoutId: any;
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(errorMessage)), timeoutMs);
+  });
+  return Promise.race([
+    promise.finally(() => clearTimeout(timeoutId)),
+    timeoutPromise
+  ]);
+};
+
 /**
  * Intelligent extraction of patient data from voice input.
  */
@@ -16,7 +27,7 @@ export const extractPatientDataFromAudio = async (audioDataUrl: string): Promise
   const base64Data = audioDataUrl.split(',')[1];
 
   try {
-    const response = await ai.models.generateContent({
+    const call = ai.models.generateContent({
       model: FLASH_MODEL,
       contents: {
         parts: [
@@ -44,9 +55,22 @@ export const extractPatientDataFromAudio = async (audioDataUrl: string): Promise
         }
       }
     });
+
+    const response = await withTimeout(call, 30000, "Audio extraction timed out after 30 seconds");
+
     // Use the .text property directly (not a method)
-    const text = response.text || '{}';
-    return JSON.parse(text) as ExtractedPatientInfo;
+    let text = response.text || '{}';
+    // Clean up potential markdown code blocks
+    text = text.replace(/^```[a-z]*\n?/, '').replace(/```\n?$/, '').trim();
+
+    const data = JSON.parse(text) as ExtractedPatientInfo;
+
+    // Sanitize Age (remove "years" etc)
+    if (data.age) {
+      data.age = data.age.replace(/\D/g, '');
+    }
+
+    return data;
   } catch (error) {
     console.error("Extraction Error:", error);
     return {};
@@ -107,7 +131,7 @@ export const analyzeMedicalCase = async (
   }
 
   try {
-    const response = await ai.models.generateContent({
+    const call = ai.models.generateContent({
       model: PRO_MODEL,
       contents: { parts: contents },
       config: {
@@ -129,6 +153,8 @@ export const analyzeMedicalCase = async (
         tools: [{ googleSearch: {} }]
       },
     });
+
+    const response = await withTimeout(call, 180000, "Medical analysis timed out after 3 minutes. Please try again or provide less data.");
 
     // Use the .text property directly
     let text = response.text || '{}';

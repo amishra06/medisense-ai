@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, Filter, Calendar, AlertCircle, FileText, ChevronRight, MoreVertical } from 'lucide-react';
-import { getUserReports } from '../services/firebaseService';
+import { getUserReports, deleteReport } from '../services/firebaseService';
 import { useAuth } from '../App';
 import { UserReport, UrgencyLevel } from '../types';
 
@@ -26,10 +26,17 @@ const ReportHistory: React.FC = () => {
     }
   }, [user]);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this report? This action cannot be undone.")) {
-      // Ideally call a delete service here
-      setReports(prev => prev.filter(r => r.id !== id));
+      try {
+        if (user) {
+          await deleteReport(user.uid, id);
+          setReports(prev => prev.filter(r => r.id !== id));
+        }
+      } catch (error) {
+        console.error("Failed to delete report:", error);
+        alert("Failed to delete report. Please try again.");
+      }
     }
   };
 

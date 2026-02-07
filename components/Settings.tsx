@@ -157,7 +157,7 @@ const Settings: React.FC = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-gray-900 p-4 md:p-8">
+        <div className="w-full transition-colors duration-300">
             <div className="max-w-6xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
@@ -174,11 +174,10 @@ const Settings: React.FC = () => {
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all ${
-                                        activeTab === tab.id
-                                            ? 'bg-teal-600 text-white shadow-lg'
-                                            : 'bg-white dark:bg-gray-800 text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700'
-                                    }`}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all ${activeTab === tab.id
+                                        ? 'bg-teal-600 text-white shadow-lg'
+                                        : 'bg-white dark:bg-gray-800 text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700'
+                                        }`}
                                 >
                                     <Icon className="w-5 h-5" />
                                     {tab.label}
@@ -303,11 +302,10 @@ const Settings: React.FC = () => {
                                             <button
                                                 key={t}
                                                 onClick={() => setTheme(t)}
-                                                className={`p-6 rounded-xl border-2 transition-all ${
-                                                    theme === t
-                                                        ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/20 shadow-lg'
-                                                        : 'border-slate-200 dark:border-gray-600 hover:border-slate-300 dark:hover:border-gray-500 bg-white dark:bg-gray-700'
-                                                }`}
+                                                className={`p-6 rounded-xl border-2 transition-all ${theme === t
+                                                    ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/20 shadow-lg'
+                                                    : 'border-slate-200 dark:border-gray-600 hover:border-slate-300 dark:hover:border-gray-500 bg-white dark:bg-gray-700'
+                                                    }`}
                                             >
                                                 <div className="flex flex-col items-center gap-3">
                                                     {t === 'light' && <Sun className={`w-6 h-6 ${theme === t ? 'text-teal-600 dark:text-teal-400' : 'text-slate-600 dark:text-gray-400'}`} />}
